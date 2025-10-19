@@ -6,6 +6,13 @@
 
 ---
 
+<div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+
+  <img src="images/01.png" alt="Screenshot 1" width="400" />
+  <img src="images/02.png" alt="Screenshot 2" width="400" />
+
+</div>
+
 ## Overview
 
 Smart Buy/Sell Box with ATR is a Pine Script® indicator for TradingView that identifies potential Buy and Sell zones using:
