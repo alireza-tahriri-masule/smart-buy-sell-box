@@ -1,0 +1,93 @@
+//@version=6
+indicator("Smart Buy/Sell Box with ATR (Improved TP/SL)", overlay=true, max_labels_count=500)
+
+//==================================================================================================
+//  Smart Buy/Sell Box with ATR
+//  Author: Alireza Tahriri
+//  License: Mozilla Public License 2.0 (https://mozilla.org/MPL/2.0/)
+//  Description:
+//      Dynamically identifies Buy/Sell zones using Moving Average (MA) crossovers,
+//      ATR-based volatility targets, and recent swing highs/lows for more accurate TP/SL.
+//
+//      Works seamlessly on all symbols and markets (Crypto, Forex, Stocks, Indices).
+//      Draws colored boxes to visualize potential trade zones with clearer TP/SL levels.
+//
+//  Developed by: Alireza Tahriri — alirezatahriri4@gmail.com
+//  Version: 1.0
+//==================================================================================================
+
+//--------------------------------------------------------------------------------------------------
+// 📊 INPUT PARAMETERS
+//--------------------------------------------------------------------------------------------------
+shortMA_length = input.int(20, "Short MA Length", tooltip="Length of the short-term Simple Moving Average.")
+longMA_length  = input.int(50, "Long MA Length", tooltip="Length of the long-term Simple Moving Average.")
+atr_length     = input.int(14, "ATR Length", tooltip="Number of bars used to calculate ATR.")
+atr_multiplier_tp = input.float(1.5, "TP ATR Multiplier", tooltip="Multiplier for Take Profit distance based on ATR.")
+atr_multiplier_sl = input.float(1.0, "SL ATR Multiplier", tooltip="Multiplier for Stop Loss distance based on ATR.")
+swingLength    = input.int(20, "Swing High/Low Length", tooltip="Number of bars to look back for swing high/low.")
+
+//--------------------------------------------------------------------------------------------------
+// 📈 CORE CALCULATIONS
+//--------------------------------------------------------------------------------------------------
+shortMA = ta.sma(close, shortMA_length)
+longMA  = ta.sma(close, longMA_length)
+plot(shortMA, color=color.new(color.blue, 0), title="Short MA")
+plot(longMA, color=color.new(color.red, 0), title="Long MA")
+
+atr = ta.atr(atr_length)
+
+// Swing High / Low for more accurate TP/SL
+highestHigh = ta.highest(high, swingLength)
+lowestLow   = ta.lowest(low, swingLength)
+
+//--------------------------------------------------------------------------------------------------
+// 🔍 SIGNAL CONDITIONS
+//--------------------------------------------------------------------------------------------------
+buyCondition  = ta.crossover(shortMA, longMA)
+sellCondition = ta.crossunder(shortMA, longMA)
+
+//--------------------------------------------------------------------------------------------------
+// 🟩 BUY ZONE VISUALIZATION
+//--------------------------------------------------------------------------------------------------
+if buyCondition
+    tp = math.max(close + atr * atr_multiplier_tp, highestHigh)
+    sl = close - atr * atr_multiplier_sl
+    
+    // Draw buy box
+    box.new(bar_index, tp, bar_index + 5, sl, border_color=color.new(color.green, 0), bgcolor=color.new(color.green, 80))
+    
+    // Build buy label text step by step
+    buyText = "BUY 📈\nTP: " + str.tostring(tp, "#.0000")
+    buyText := buyText + "\nSL: " + str.tostring(sl, "#.0000")
+    buyText := buyText + "\nTP Dist: +" + str.tostring(tp - close, "#.0000")
+    buyText := buyText + "\nSL Dist: -" + str.tostring(close - sl, "#.0000")
+    
+    // Draw buy label
+    label.new(bar_index, low, buyText, style=label.style_label_up, color=color.new(color.green, 0), textcolor=color.white)
+
+//--------------------------------------------------------------------------------------------------
+// 🟥 SELL ZONE VISUALIZATION
+//--------------------------------------------------------------------------------------------------
+if sellCondition
+    tp = math.min(close - atr * atr_multiplier_tp, lowestLow)
+    sl = close + atr * atr_multiplier_sl
+    
+    // Draw sell box
+    box.new(bar_index, sl, bar_index + 5, tp, border_color=color.new(color.red, 0), bgcolor=color.new(color.red, 80))
+    
+    // Build sell label text step by step
+    sellText = "SELL 📉\nTP: " + str.tostring(tp, "#.0000")
+    sellText := sellText + "\nSL: " + str.tostring(sl, "#.0000")
+    sellText := sellText + "\nTP Dist: -" + str.tostring(close - tp, "#.0000")
+    sellText := sellText + "\nSL Dist: +" + str.tostring(sl - close, "#.0000")
+    
+    // Draw sell label
+    label.new(bar_index, high, sellText, style=label.style_label_down, color=color.new(color.red, 0), textcolor=color.white)
+
+//==================================================================================================
+// ✅ Notes / Recommendations:
+//      - Combine with RSI or Volume indicators for additional confirmation.
+//      - Works across all timeframes, but 15m → 4h recommended.
+//      - Adjust ATR multipliers and swing length to fit symbol volatility.
+//      - Boxes and labels are fully customizable (colors, transparency, size).
+//==================================================================================================
